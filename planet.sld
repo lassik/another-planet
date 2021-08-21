@@ -42,7 +42,7 @@
 
     (define (take-at-most list n)
       (let loop ((n n) (new-list '()) (list list))
-        (if (< n 1) (reverse new-list)
+        (if (or (null? list) (< n 1)) (reverse new-list)
             (loop (- n 1) (cons (car list) new-list) (cdr list)))))
 
     (define (disp . xs)
