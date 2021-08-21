@@ -8,6 +8,7 @@
           entry-content-xhtml
           entry-iso-date
           entry-us-english-date
+          entry-english-year-and-month
           planet-refresh-feed
           planet-all-entries-ever
           planet-n-newest-entries
@@ -81,6 +82,21 @@
     (define (path-append . paths)
       (string-join paths "/"))
 
+    (define english-month-names
+      (vector
+       "January"
+       "February"
+       "March"
+       "April"
+       "May"
+       "June"
+       "July"
+       "August"
+       "September"
+       "October"
+       "November"
+       "December"))
+
     ;;;
 
     (define-record-type feed
@@ -112,34 +128,33 @@
     (define (entry-content-xhtml entry)
       (content-xhtml (entry-content entry)))
 
-    (define (entry-iso-date entry)
+    (define (entry-rfc3339-digits n entry)
       (let ((rfc3339 (entry-updated entry)))
-        (if (and rfc3339 (>= (string-length rfc3339) 10))
-            (substring rfc3339 0 10)
+        (if (and rfc3339 (>= (string-length rfc3339) n))
+            (substring rfc3339 0 n)
             (error "No date"))))
 
-    (define (entry-us-english-date entry)
-      (define month-names
-        (vector
-         "January"
-         "February"
-         "March"
-         "April"
-         "May"
-         "June"
-         "July"
-         "August"
-         "September"
-         "October"
-         "November"
-         "December"))
+    (define (entry-iso-date entry) (entry-rfc3339-digits 10 entry))
+
+    (define (entry-iso-month entry) (entry-rfc3339-digits 7 entry))
+
+    (define (entry-y-m-d-integers entry)
       (let* ((yyyy-mm-dd (entry-iso-date entry))
-             (year (string->number (substring yyyy-mm-dd 0 4)))
+             (year  (string->number (substring yyyy-mm-dd 0 4)))
              (month (string->number (substring yyyy-mm-dd 5 7)))
-             (month-name (vector-ref month-names (- month 1)))
-             (day-of-month (string->number (substring yyyy-mm-dd 8 10))))
-        (string-append (number->string day-of-month) " "
-                       month-name " " (number->string year))))
+             (day   (string->number (substring yyyy-mm-dd 8 10))))
+        (values year month day)))
+
+    (define (entry-us-english-date entry)
+      (let-values (((year month day) (entry-y-m-d-integers entry)))
+        (let ((month-name (vector-ref english-month-names (- month 1))))
+          (string-append
+           (number->string day) " " month-name " " (number->string year)))))
+
+    (define (entry-english-year-and-month entry)
+      (let-values (((year month _) (entry-y-m-d-integers entry)))
+        (let ((month-name (vector-ref english-month-names (- month 1))))
+          (string-append month-name " " (number->string year)))))
 
     (define (entry-iso-date<? entry1 entry2)
       (string<? (entry-iso-date entry1)
@@ -158,6 +173,9 @@
 
     (define (planet-group-entries-by-date entries)
       (group-by entry-iso-date entries))
+
+    (define (planet-group-entries-by-month entries)
+      (group-by entry-iso-month entries))
 
     (define (write-html-file filename sxml)
       (supersede-text-file

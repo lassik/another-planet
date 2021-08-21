@@ -42,7 +42,7 @@
      ,@(map
         (lambda (entries)
           `(section
-            (h2 ,(entry-us-english-date (first entries)))
+            (h2 ,(entry-english-year-and-month (first entries)))
             ,@(map (lambda (entry)
                      `(article
                        (h3 ,(entry-title entry))
