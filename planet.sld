@@ -3,6 +3,8 @@
           feed-id
           feed-title
           feed-url
+          feed-cache-file
+          feed-cached?
           entry-author
           entry-title
           entry-content-xhtml
@@ -108,6 +110,9 @@
 
     (define (feed-cache-file feed cache-directory)
       (path-append cache-directory (string-append (feed-id feed) ".xml")))
+
+    (define (feed-cached? feed cache-directory)
+      (file-exists? (feed-cache-file feed cache-directory)))
 
     (define (planet-refresh-feed feed cache-directory)
       (let ((cache-file (feed-cache-file feed cache-directory)))

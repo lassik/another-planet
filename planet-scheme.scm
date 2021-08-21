@@ -55,22 +55,30 @@
 
 ;;
 
-(define (refresh-cache)
+(define (refresh-cache all?)
   (for-each (lambda (feed)
-              (disp "Refreshing " (feed-url feed))
-              (planet-refresh-feed feed cache-directory))
+              (let ((new? (not (feed-cached? feed cache-directory))))
+                (when (or all? new?)
+                  (disp "Refreshing " (feed-url feed))
+                  (planet-refresh-feed feed cache-directory))))
             feeds))
 
 (define (generate-from-cache)
-  (disp "Writing index.html")
-  (write-html-file "index.html" (front-page)))
+  (disp "Writing www/index.html")
+  (write-html-file "www/index.html" (front-page)))
+
+(define (only-command-line-arg? arg)
+  (and (= 1 (length (command-args)))
+       (string=? arg (first (command-args)))))
 
 (define (main)
   (cond ((null? (command-args))
-         (refresh-cache)
+         (refresh-cache #t)
          (generate-from-cache))
-        ((and (= 1 (length (command-args)))
-              (string=? "-n" (first (command-args))))
+        ((only-command-line-arg? "-n")
+         (refresh-cache #f)
+         (generate-from-cache))
+        ((only-command-line-arg? "-o")
          (generate-from-cache))
         (else
          (error "Usage: ./planet-scheme [-n]"))))
