@@ -20,13 +20,15 @@
           (srfi 193))
   (cond-expand
    (chicken
-    (import (chicken file)
-            (chicken process-context)
+    (import (only (chicken file)
+                  create-directory
+                  rename-file)
             (only (http-client)
                   with-input-from-request)
             (only (sxml-transforms)
                   SXML->HTML)
-            (only (traversal) group-by)
+            (only (traversal)
+                  group-by)
             (only (atom)
                   read-atom-feed
                   feed-entries
