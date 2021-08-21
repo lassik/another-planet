@@ -3,9 +3,11 @@
           feed-id
           feed-title
           feed-url
+          entry-author
           entry-title
+          entry-content-xhtml
           entry-iso-date
-          entry->html
+          entry-us-english-date
           planet-refresh-feed
           planet-all-entries-ever
           planet-n-newest-entries
@@ -29,10 +31,13 @@
             (only (traversal)
                   group-by)
             (only (atom)
-                  read-atom-feed
-                  feed-entries
+                  content-xhtml
+                  entry-author
+                  entry-content
+                  entry-title
                   entry-updated
-                  entry-title))))
+                  feed-entries
+                  read-atom-feed))))
   (begin
 
     (define (take-at-most list n)
@@ -104,18 +109,41 @@
       (let ((cache-file (feed-cache-file feed cache-directory)))
         (call-with-port (open-binary-input-file cache-file) read-atom-feed)))
 
+    (define (entry-content-xhtml entry)
+      (content-xhtml (entry-content entry)))
+
     (define (entry-iso-date entry)
       (let ((rfc3339 (entry-updated entry)))
         (if (and rfc3339 (>= (string-length rfc3339) 10))
             (substring rfc3339 0 10)
             (error "No date"))))
 
+    (define (entry-us-english-date entry)
+      (define month-names
+        (vector
+         "January"
+         "February"
+         "March"
+         "April"
+         "May"
+         "June"
+         "July"
+         "August"
+         "September"
+         "October"
+         "November"
+         "December"))
+      (let* ((yyyy-mm-dd (entry-iso-date entry))
+             (year (string->number (substring yyyy-mm-dd 0 4)))
+             (month (string->number (substring yyyy-mm-dd 5 7)))
+             (month-name (vector-ref month-names (- month 1)))
+             (day-of-month (string->number (substring yyyy-mm-dd 8 10))))
+        (string-append (number->string day-of-month) " "
+                       month-name " " (number->string year))))
+
     (define (entry-iso-date<? entry1 entry2)
       (string<? (entry-iso-date entry1)
                 (entry-iso-date entry2)))
-
-    (define (entry->html entry)
-      `(h3 ,(entry-title entry)))
 
     (define (planet-all-entries-ever feeds cache-directory)
       (let ((entries (append-map feed-entries

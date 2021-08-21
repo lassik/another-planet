@@ -41,10 +41,15 @@
      (h1 ,title)
      ,@(map
         (lambda (entries)
-          (let ((date (entry-iso-date (first entries))))
-            `(section
-              (h2 ,date)
-              ,@(map entry->html entries))))
+          `(section
+            (h2 ,(entry-us-english-date (first entries)))
+            ,@(map (lambda (entry)
+                     `(article
+                       (h3 ,(entry-title entry))
+                       ,(or (entry-content-xhtml entry)
+                            `(div))
+                       (p "by " ,(entry-author entry))))
+                   entries)))
         (planet-group-entries-by-date
          (planet-n-newest-entries 10 feeds cache-directory))))))
 
