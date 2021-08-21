@@ -16,8 +16,7 @@
           (scheme write)
           (srfi 1)
           (srfi 13)
-          (srfi 132)
-          (srfi 193))
+          (srfi 132))
   (cond-expand
    (chicken
     (import (only (chicken file)
@@ -69,6 +68,11 @@
               (begin (write-string chunk output)
                      (loop))))))
 
+    (define (supersede-text-file filename thunk)
+      (let ((new-filename (string-append filename ".new")))
+        (with-output-to-file new-filename thunk)
+        (rename-file new-filename filename #t)))
+
     (define (path-append . paths)
       (string-join paths "/"))
 
@@ -91,12 +95,10 @@
          (feed-url feed)
          #f
          (lambda ()
-           (let ((temp-file (string-append cache-file ".new")))
-             (call-with-port
-              (open-output-file temp-file)
-              (lambda (output)
-                (copy-textual-port (current-input-port) output)))
-             (rename-file temp-file cache-file #t))))))
+           (supersede-text-file
+            cache-file (lambda ()
+                         (copy-textual-port (current-input-port)
+                                            (current-output-port))))))))
 
     (define (read-feed-from-cache feed cache-directory)
       (let ((cache-file (feed-cache-file feed cache-directory)))
@@ -130,10 +132,8 @@
       (group-by entry-iso-date entries))
 
     (define (write-html-file filename sxml)
-      (let ((new-filename (string-append filename ".new")))
-        (with-output-to-file new-filename
-          (lambda ()
-            (write-string "<!DOCTYPE html>")
-            (SXML->HTML sxml)
-            (newline)))
-        (rename-file new-filename filename #t)))))
+      (supersede-text-file
+       filename (lambda ()
+                  (write-string "<!DOCTYPE html>")
+                  (SXML->HTML sxml)
+                  (newline))))))
